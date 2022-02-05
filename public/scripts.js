@@ -4,6 +4,22 @@ const elements = {
 };
 
 /**
+ * Generate random string.
+ */
+const random = (length = 8) => {
+    // Declare all characters
+    let chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+
+    // Pick characers randomly
+    let str = '';
+    for (let i = 0; i < length; i++) {
+        str += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+
+    return str;
+};
+
+/**
  * Listen for *drag* events.
  */
 document.addEventListener('dragover', (event) => {
@@ -22,10 +38,30 @@ document.addEventListener('drop', (event) => {
         console.error('No files in drop event');
         return;
     }
-    console.log(files[0]);
+    const file = files[0];
     const reader = new FileReader();
     reader.addEventListener('load', (event) => {
-        console.log(event.target.result);
+        const fileName = file.name;
+        const fileType = file.type;
+        const fileData = event.target.result;
+
+        // JS still has no API to send multipart requests... m(
+        const boundary = random(32);
+        let data = '';
+        data += `--${boundary}\r\n`;
+        data += `content-disposition: form-data; name="file"; filename="${fileName}"\r\n`;
+        data += `content-type: ${fileType}\r\n`;
+        data += "\r\n";
+        data += fileData;
+        data += "\r\n";
+        data += `--${boundary}--`;
+
+        // Send request
+        const request = new XMLHttpRequest();
+        request.open('POST', '/', true);
+        request.setRequestHeader('Content-Type', `multipart/form-data; boundary=${boundary}`);
+        console.log('Sending request');
+        request.send(data);
     });
-    reader.readAsText(files[0]);
+    reader.readAsBinaryString(file);
 });

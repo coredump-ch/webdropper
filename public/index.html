@@ -7,6 +7,11 @@
         <style>
             body {
                 padding: 16px;
+                font-family: sans-serif;
+            }
+
+            h1 {
+                font-size: 3em;
             }
 
             #wrapper {
@@ -14,6 +19,10 @@
                 margin: 0 auto;
                 padding: 16px 32px 32px;
                 text-align: center;
+            }
+
+            form {
+                margin: 2em auto;
             }
 
             .drag-over {
@@ -25,12 +34,13 @@
         <div id="wrapper">
             <h1>Webdropper</h1>
             <p>Drop files here to upload them!</p>
+            <p>Note: If a filename with this name already exists, it will be overwritten.</p>
             <form action="/" method="post" enctype="multipart/form-data">
                 <label>
                     Upload file:
                     <input type="file" name="file" multiple>
                 </label>
-                <input type="submit" value="Upload files">
+                <input type="submit" value="Upload">
             </form>
         </div>
         <script src="scripts.js"></script>
