@@ -17,6 +17,10 @@ struct Args {
     /// Path to the directory where files will be put.
     #[clap(short, long)]
     target_dir: PathBuf,
+
+    /// Address to bind to
+    #[clap(short, long, default_value = "127.0.0.1:3000")]
+    bind: SocketAddr,
 }
 
 #[derive(RustEmbed)]
@@ -47,13 +51,12 @@ async fn main() {
     let app = Router::new()
         .route("/", get(index).post(accept_form))
         .route("/scripts.js", get(scripts))
-        .layer(AddExtensionLayer::new(args))
+        .layer(AddExtensionLayer::new(args.clone()))
         .layer(tower_http::trace::TraceLayer::new_for_http());
 
     // run it with hyper
-    let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
-    tracing::debug!("listening on {}", addr);
-    axum::Server::bind(&addr)
+    tracing::info!("Listening on {}", &args.bind);
+    axum::Server::bind(&args.bind)
         .serve(app.into_make_service())
         .await
         .unwrap();
