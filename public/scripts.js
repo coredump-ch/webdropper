@@ -32,36 +32,37 @@ document.addEventListener('drop', (event) => {
     event.preventDefault();
     elements.wrapper.className = '';
 
-    // Read first file (if any)
+    // Read files
     const files = event.dataTransfer.files;
     if (files.length === 0) {
         console.error('No files in drop event');
         return;
     }
-    const file = files[0];
-    const reader = new FileReader();
-    reader.addEventListener('load', (event) => {
-        const fileName = file.name;
-        const fileType = file.type;
-        const fileData = event.target.result;
+    for (const file of files) {
+        const reader = new FileReader();
+        reader.addEventListener('load', (event) => {
+            const fileName = file.name;
+            const fileType = file.type;
+            const fileData = event.target.result;
 
-        // JS still has no API to send multipart requests... m(
-        const boundary = random(32);
-        let data = '';
-        data += `--${boundary}\r\n`;
-        data += `content-disposition: form-data; name="file"; filename="${fileName}"\r\n`;
-        data += `content-type: ${fileType}\r\n`;
-        data += "\r\n";
-        data += fileData;
-        data += "\r\n";
-        data += `--${boundary}--`;
+            // JS still has no API to send multipart requests... m(
+            const boundary = random(32);
+            let data = '';
+            data += `--${boundary}\r\n`;
+            data += `content-disposition: form-data; name="file"; filename="${fileName}"\r\n`;
+            data += `content-type: ${fileType}\r\n`;
+            data += "\r\n";
+            data += fileData;
+            data += "\r\n";
+            data += `--${boundary}--`;
 
-        // Send request
-        const request = new XMLHttpRequest();
-        request.open('POST', '/', true);
-        request.setRequestHeader('Content-Type', `multipart/form-data; boundary=${boundary}`);
-        console.log('Sending request');
-        request.send(data);
-    });
-    reader.readAsBinaryString(file);
+            // Send request
+            const request = new XMLHttpRequest();
+            request.open('POST', '/', true);
+            request.setRequestHeader('Content-Type', `multipart/form-data; boundary=${boundary}`);
+            console.log(`Sending request for file ${fileName}`);
+            request.send(data);
+        });
+        reader.readAsBinaryString(file);
+    }
 });
