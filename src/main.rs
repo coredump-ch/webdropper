@@ -2,7 +2,7 @@ use std::{borrow::Cow, net::SocketAddr, path::PathBuf, process, sync::Arc};
 
 use axum::{
     body::{boxed, Bytes, Full},
-    extract::{ContentLengthLimit, Extension, Multipart},
+    extract::{DefaultBodyLimit, Extension, Multipart},
     http::{header, Response},
     response::{Html, IntoResponse, Redirect},
     routing::get,
@@ -52,6 +52,7 @@ async fn main() {
         .route("/", get(index).post(accept_form))
         .route("/scripts.js", get(scripts))
         .layer(Extension(args.clone()))
+        .layer(DefaultBodyLimit::max(250 * 1024 * 1024)) // 250MB limit
         .layer(tower_http::trace::TraceLayer::new_for_http());
 
     // run it with hyper
@@ -75,13 +76,6 @@ async fn scripts() -> impl IntoResponse {
         .unwrap()
 }
 
-type LimitedMultipart = ContentLengthLimit<
-    Multipart,
-    {
-        250 * 1024 * 1024 /* 250mb */
-    },
->;
-
 async fn store_file(filename: &str, bytes: Bytes, args: &Args) -> std::io::Result<()> {
     info!(
         "Store file with filename {:?} and {} bytes to dir {:?}",
@@ -93,10 +87,7 @@ async fn store_file(filename: &str, bytes: Bytes, args: &Args) -> std::io::Resul
     Ok(())
 }
 
-async fn accept_form(
-    ContentLengthLimit(mut multipart): LimitedMultipart,
-    Extension(args): Extension<Arc<Args>>,
-) -> Redirect {
+async fn accept_form(Extension(args): Extension<Arc<Args>>, mut multipart: Multipart) -> Redirect {
     // Store all files in the multipart body in the file system
     while let Some(field) = multipart.next_field().await.unwrap() {
         let file_name = field.file_name().unwrap().to_string();
