@@ -66,13 +66,31 @@ async fn main() {
 type IndexReturnType = Html<Cow<'static, [u8]>>;
 
 /// Helper function to show the index page
-fn show_index() -> IndexReturnType {
-    let bytes = EmbeddableStaticFile::get("index.html").unwrap().data;
-    Html(bytes)
+fn show_index(success_msg: Option<&str>) -> IndexReturnType {
+    let raw_bytes = EmbeddableStaticFile::get("index.html").unwrap().data;
+    match success_msg {
+        Some(msg) => {
+            // Add success message to HTML by replacing placeholder comment
+            let template_html = std::str::from_utf8(&raw_bytes).expect("Non-UTF8 index.html");
+            let message_html = format!(
+                "<p class='success'>{}<p>",
+                html_escape::encode_safe(msg).replace('\n', "<br>")
+            );
+            let bytes = template_html
+                .replace("<!--success-msg-->", &message_html)
+                .as_bytes()
+                .to_vec();
+            Html(Cow::Owned(bytes))
+        }
+        None => {
+            // Return raw HTML
+            Html(raw_bytes)
+        }
+    }
 }
 
 async fn index() -> IndexReturnType {
-    show_index()
+    show_index(None)
 }
 
 async fn scripts() -> impl IntoResponse {
@@ -100,13 +118,24 @@ async fn accept_form(
     mut multipart: Multipart,
 ) -> IndexReturnType {
     // Store all files in the multipart body in the file system
+    let mut uploaded_files: Vec<(String, usize)> = vec![];
     while let Some(field) = multipart.next_field().await.unwrap() {
         let file_name = field.file_name().unwrap().to_string();
-        if let Err(e) = store_file(&file_name, field.bytes().await.unwrap(), &args).await {
+        let file_bytes = field.bytes().await.expect("Could not read file bytes");
+        uploaded_files.push((file_name.clone(), file_bytes.len()));
+        if let Err(e) = store_file(&file_name, file_bytes, &args).await {
             error!("Failed to upload file {}: {:?}", file_name, e);
         }
     }
 
+    // Build success message
+    let mut msg = format!("Successfully uploaded {} file(s):", uploaded_files.len());
+    for (name, bytes) in uploaded_files {
+        msg.push('\n');
+        msg.push_str(&name);
+        msg.push_str(&format!(" ({} bytes)", bytes));
+    }
+
     // Show index page
-    show_index()
+    show_index(Some(&msg))
 }

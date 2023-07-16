@@ -28,16 +28,26 @@
             .drag-over {
                 background-color: #a5d6a7 !important;
             }
+
+            .success {
+                border: 2px solid #6a994e;
+                background-color: #a7c957;
+                width: max-content;
+                margin: 0px auto;
+                padding: 8px;
+                border-radius: 12px;
+            }
         </style>
     </head>
     <body>
         <div id="wrapper">
             <h1>Webdropper</h1>
-            <p>Drop files here to upload them!</p>
+            <!--success-msg-->
+            <p>Select or drop files here to upload them!</p>
             <p>Note: If a filename with this name already exists, it will be overwritten.</p>
             <form action="/" method="post" enctype="multipart/form-data">
                 <label>
-                    Upload file:
+                    Upload file(s):
                     <input type="file" name="file" multiple>
                 </label>
                 <input type="submit" value="Upload">
