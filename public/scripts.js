@@ -66,7 +66,7 @@ document.addEventListener('drop', (event) => {
     fileInput.files = event.dataTransfer.files;
 
     // Submit form
-    fileInput.closest('form').dispatchEvent(new Event('submit'));
+    fileInput.closest('form').requestSubmit();
 });
 
 elements.uploadForm.addEventListener('submit', (event) => {
