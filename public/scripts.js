@@ -19,50 +19,27 @@ const random = (length = 8) => {
     return str;
 };
 
-/**
- * Listen for *drag* events.
- */
-document.addEventListener('dragover', (event) => {
+// Drag & drop
+
+const handleDragOver = (event) => {
     event.preventDefault();
-});
-document.addEventListener('dragenter', () => {
-    elements.wrapper.className = 'drag-over';
-});
+    elements.wrapper.classList.add('drag-over');
+}
+const handleDragEnd = (event) => {
+    elements.wrapper.classList.remove('drag-over');
+}
+document.addEventListener('dragenter', handleDragOver);
+document.addEventListener('dragover', handleDragOver);
+document.addEventListener('dragleave', handleDragEnd);
+
 document.addEventListener('drop', (event) => {
     event.preventDefault();
     elements.wrapper.className = '';
 
-    // Read files
-    const files = event.dataTransfer.files;
-    if (files.length === 0) {
-        console.error('No files in drop event');
-        return;
-    }
-    for (const file of files) {
-        const reader = new FileReader();
-        reader.addEventListener('load', (event) => {
-            const fileName = file.name;
-            const fileType = file.type;
-            const fileData = event.target.result;
+    // Add files to form
+    const fileInput = document.querySelector('input[name="file"]');
+    fileInput.files = event.dataTransfer.files;
 
-            // JS still has no API to send multipart requests... m(
-            const boundary = random(32);
-            let data = '';
-            data += `--${boundary}\r\n`;
-            data += `content-disposition: form-data; name="file"; filename="${fileName}"\r\n`;
-            data += `content-type: ${fileType}\r\n`;
-            data += "\r\n";
-            data += fileData;
-            data += "\r\n";
-            data += `--${boundary}--`;
-
-            // Send request
-            const request = new XMLHttpRequest();
-            request.open('POST', '/', true);
-            request.setRequestHeader('Content-Type', `multipart/form-data; boundary=${boundary}`);
-            console.log(`Sending request for file ${fileName}`);
-            request.send(data);
-        });
-        reader.readAsBinaryString(file);
-    }
+    // Submit form
+    fileInput.closest('form').submit();
 });
