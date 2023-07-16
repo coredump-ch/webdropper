@@ -5,7 +5,7 @@ edition = "2021"
 
 [dependencies]
 axum = { version = "0.4", features = ["multipart"] }
-clap = { version = "3", features = ["derive"] }
+clap = { version = "4", features = ["derive"] }
 rust-embed = "6"
 tokio = { version = "1.0", features = ["full"] }
 tracing = "0.1"
