@@ -104,5 +104,5 @@ async fn accept_form(
             error!("Failed to upload file {}: {:?}", file_name, e);
         }
     }
-    Redirect::to("/".parse().unwrap())
+    Redirect::to("/")
 }
