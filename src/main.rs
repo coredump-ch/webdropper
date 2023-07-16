@@ -6,7 +6,7 @@ use axum::{
     http::{header, Response},
     response::{Html, IntoResponse, Redirect},
     routing::get,
-    AddExtensionLayer, Router,
+    Router,
 };
 use clap::Parser;
 use rust_embed::RustEmbed;
@@ -51,7 +51,7 @@ async fn main() {
     let app = Router::new()
         .route("/", get(index).post(accept_form))
         .route("/scripts.js", get(scripts))
-        .layer(AddExtensionLayer::new(args.clone()))
+        .layer(Extension(args.clone()))
         .layer(tower_http::trace::TraceLayer::new_for_http());
 
     // run it with hyper
