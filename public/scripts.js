@@ -19,15 +19,19 @@ const random = (length = 8) => {
     return str;
 };
 
-/**
- * Listen for *drag* events.
- */
-document.addEventListener('dragover', (event) => {
+// Drag & drop
+
+const handleDragOver = (event) => {
     event.preventDefault();
-});
-document.addEventListener('dragenter', () => {
-    elements.wrapper.className = 'drag-over';
-});
+    elements.wrapper.classList.add('drag-over');
+}
+const handleDragEnd = (event) => {
+    elements.wrapper.classList.remove('drag-over');
+}
+document.addEventListener('dragenter', handleDragOver);
+document.addEventListener('dragover', handleDragOver);
+document.addEventListener('dragleave', handleDragEnd);
+
 document.addEventListener('drop', (event) => {
     event.preventDefault();
     elements.wrapper.className = '';
