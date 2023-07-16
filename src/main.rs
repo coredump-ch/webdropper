@@ -4,7 +4,7 @@ use axum::{
     body::{boxed, Bytes, Full},
     extract::{DefaultBodyLimit, Extension, Multipart},
     http::{header, Response},
-    response::{Html, IntoResponse, Redirect},
+    response::{Html, IntoResponse},
     routing::get,
     Router,
 };
@@ -63,8 +63,16 @@ async fn main() {
         .unwrap();
 }
 
-async fn index() -> Html<Cow<'static, [u8]>> {
-    Html(EmbeddableStaticFile::get("index.html").unwrap().data)
+type IndexReturnType = Html<Cow<'static, [u8]>>;
+
+/// Helper function to show the index page
+fn show_index() -> IndexReturnType {
+    let bytes = EmbeddableStaticFile::get("index.html").unwrap().data;
+    Html(bytes)
+}
+
+async fn index() -> IndexReturnType {
+    show_index()
 }
 
 async fn scripts() -> impl IntoResponse {
@@ -87,7 +95,10 @@ async fn store_file(filename: &str, bytes: Bytes, args: &Args) -> std::io::Resul
     Ok(())
 }
 
-async fn accept_form(Extension(args): Extension<Arc<Args>>, mut multipart: Multipart) -> Redirect {
+async fn accept_form(
+    Extension(args): Extension<Arc<Args>>,
+    mut multipart: Multipart,
+) -> IndexReturnType {
     // Store all files in the multipart body in the file system
     while let Some(field) = multipart.next_field().await.unwrap() {
         let file_name = field.file_name().unwrap().to_string();
@@ -95,5 +106,7 @@ async fn accept_form(Extension(args): Extension<Arc<Args>>, mut multipart: Multi
             error!("Failed to upload file {}: {:?}", file_name, e);
         }
     }
-    Redirect::to("/")
+
+    // Show index page
+    show_index()
 }
