@@ -143,3 +143,36 @@ async fn accept_form(
     // Show index page
     show_index(Some(&msg))
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    use axum::body::Body;
+    use axum::http::header::CONTENT_TYPE;
+    use axum::http::{Request, StatusCode};
+    use tower::ServiceExt;
+
+    fn default_args() -> Arc<Args> {
+        Arc::new(Args {
+            target_dir: "/tmp".into(),
+            bind: "127.0.0.1:3000".parse().unwrap(),
+        })
+    }
+
+    #[tokio::test]
+    async fn test_index() {
+        let app = app(default_args());
+
+        let response = app
+            .oneshot(Request::builder().uri("/").body(Body::empty()).unwrap())
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::OK);
+        assert_eq!(
+            response.headers().get(CONTENT_TYPE).unwrap(),
+            "text/html; charset=utf-8"
+        );
+    }
+}
