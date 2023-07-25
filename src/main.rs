@@ -48,12 +48,7 @@ async fn main() {
     let args = Arc::new(args);
 
     // Build our application with some routes
-    let app = Router::new()
-        .route("/", get(index).post(accept_form))
-        .route("/scripts.js", get(scripts))
-        .layer(Extension(args.clone()))
-        .layer(DefaultBodyLimit::max(250 * 1024 * 1024)) // 250MB limit
-        .layer(tower_http::trace::TraceLayer::new_for_http());
+    let app = app(args.clone());
 
     // run it with hyper
     tracing::info!("Listening on {}", &args.bind);
@@ -61,6 +56,15 @@ async fn main() {
         .serve(app.into_make_service())
         .await
         .unwrap();
+}
+
+fn app(args: Arc<Args>) -> Router {
+    Router::new()
+        .route("/", get(index).post(accept_form))
+        .route("/scripts.js", get(scripts))
+        .layer(Extension(args))
+        .layer(DefaultBodyLimit::max(250 * 1024 * 1024)) // 250MB limit
+        .layer(tower_http::trace::TraceLayer::new_for_http())
 }
 
 type IndexReturnType = Html<Cow<'static, [u8]>>;
