@@ -10,6 +10,7 @@ use axum::{
 };
 use clap::Parser;
 use rust_embed::RustEmbed;
+use tower_http::limit::RequestBodyLimitLayer;
 use tracing::{error, info};
 
 #[derive(Parser)]
@@ -63,7 +64,8 @@ fn app(args: Arc<Args>) -> Router {
         .route("/", get(index).post(accept_form))
         .route("/scripts.js", get(scripts))
         .layer(Extension(args))
-        .layer(DefaultBodyLimit::max(250 * 1024 * 1024)) // 250MB limit
+        .layer(DefaultBodyLimit::disable())
+        .layer(RequestBodyLimitLayer::new(250 * 1024 * 1024)) // 250MB limit
         .layer(tower_http::trace::TraceLayer::new_for_http())
 }
 
