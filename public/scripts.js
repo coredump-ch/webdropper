@@ -72,8 +72,6 @@ addEventListener("DOMContentLoaded", (event) => {
 
     elements.uploadForm.addEventListener('submit', (event) => {
         event.preventDefault();
-        console.log("Submit event:");
-        console.log(event);
 
         var xhr = new XMLHttpRequest();
         xhr.upload.addEventListener('loadstart', (event) => {
@@ -87,19 +85,18 @@ addEventListener("DOMContentLoaded", (event) => {
         }, false);
 
         xhr.addEventListener('readystatechange', (event) => {
-            console.log(event.target.readyState);
             if (event.target.readyState === XMLHttpRequest.DONE) {
                 const status = event.target.status;
                 if (status === 0 || (status >= 200 && status < 400) && event.target.responseText) {
-                    console.log('readystatechange', event);
-                    //we got a response from the server and we're replacing the whole current document content with it, simulating a page reload
+                    //we got a response from the server and we're replacing the
+                    //whole current document content with it, simulating a page
+                    //reload
                     var newDocument = document.open();
                     newDocument.write(event.target.responseText);
                     newDocument.close();
                 } else {
                     console.error(event);
                     uploadFailed(event);
-                    //throw new Error('Error in the response.');
                 }
             }
         }, false);
@@ -108,10 +105,7 @@ addEventListener("DOMContentLoaded", (event) => {
         xhr.upload.addEventListener("abort", uploadFailed);
         xhr.upload.addEventListener("timeout", uploadFailed);
 
-        console.log(elements.uploadForm);
-        var openResult = xhr.open(elements.uploadForm.getAttribute('method'), elements.uploadForm.getAttribute('action'), true);
-        console.log('openResult:', openResult)
-        var sendResult = xhr.send(new FormData(elements.uploadForm));
-        console.log('sendResult:', sendResult)
+        xhr.open(elements.uploadForm.getAttribute('method'), elements.uploadForm.getAttribute('action'), true);
+        xhr.send(new FormData(elements.uploadForm));
     });
 });
