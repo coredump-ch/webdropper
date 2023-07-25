@@ -175,4 +175,25 @@ mod test {
             "text/html; charset=utf-8"
         );
     }
+
+    #[tokio::test]
+    async fn test_scripts_js() {
+        let app = app(default_args());
+
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/scripts.js")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::OK);
+        assert_eq!(
+            response.headers().get(CONTENT_TYPE).unwrap(),
+            "application/javascript"
+        );
+    }
 }
