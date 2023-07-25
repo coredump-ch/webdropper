@@ -41,7 +41,7 @@ addEventListener("DOMContentLoaded", (event) => {
 
     const uploadFailed = (event) => {
         elements.uploadProgressWrapper.style.display = 'none';
-        elements.uploadStatus.innerHTML = `Upload failed: #{event.type}`
+        elements.uploadStatus.innerHTML = `Upload failed: ${event.type}`
         elements.uploadStatus.style.display = 'block';
     }
 
