@@ -151,6 +151,7 @@ mod test {
     use axum::body::Body;
     use axum::http::header::CONTENT_TYPE;
     use axum::http::{Request, StatusCode};
+    use tempfile::tempdir;
     use tower::ServiceExt;
 
     fn default_args() -> Arc<Args> {
@@ -194,6 +195,44 @@ mod test {
         assert_eq!(
             response.headers().get(CONTENT_TYPE).unwrap(),
             "application/javascript"
+        );
+    }
+
+    #[tokio::test]
+    async fn test_upload() {
+        let tmp_dir = tempdir().unwrap();
+        let args = Arc::new(Args {
+            target_dir: tmp_dir.path().to_path_buf(),
+            bind: "127.0.0.1:3000".parse().unwrap(),
+        });
+        let app = app(args);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .method(axum::http::Method::POST)
+                    .uri("/")
+                    .header(CONTENT_TYPE, "multipart/form-data;boundary=95685543938383789682253523760123")
+                    .body(Body::from(
+                            "--95685543938383789682253523760123\r\n\
+                            Content-Disposition: form-data; name=\"file\"; filename=\"test.txt\"\r\n\
+                            Content-Type: text/plain\r\n\
+                            \r\n\
+                            hello\
+                            \r\n\
+                            --95685543938383789682253523760123--"
+                    ))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        assert_eq!(
+            response.headers().get(CONTENT_TYPE).unwrap(),
+            "text/html; charset=utf-8"
+        );
+        assert_eq!(
+            std::fs::read_to_string(tmp_dir.path().join("test.txt")).unwrap(),
+            "hello"
         );
     }
 }
