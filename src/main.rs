@@ -150,7 +150,7 @@ mod test {
 
     use axum::{
         body::Body,
-        http::header::CONTENT_TYPE,
+        http::header::{CONTENT_LENGTH, CONTENT_TYPE},
         http::{Request, StatusCode},
     };
     use tempfile::tempdir;
@@ -236,5 +236,26 @@ mod test {
             std::fs::read_to_string(tmp_dir.path().join("test.txt")).unwrap(),
             "hello"
         );
+    }
+
+    #[tokio::test]
+    async fn test_upload_with_too_large_content_length() {
+        let app = app(default_args());
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .method(axum::http::Method::POST)
+                    .uri("/")
+                    .header(
+                        CONTENT_TYPE,
+                        "multipart/form-data;boundary=95685543938383789682253523760123",
+                    )
+                    .header(CONTENT_LENGTH, "1000000000")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::PAYLOAD_TOO_LARGE);
     }
 }
