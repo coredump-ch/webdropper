@@ -59,13 +59,16 @@ async fn main() {
         .unwrap();
 }
 
+/// 250MB limit
+const REQUEST_BODY_LIMIT: usize = 250 * 1024 * 1024;
+
 fn app(args: Arc<Args>) -> Router {
     Router::new()
         .route("/", get(index).post(accept_form))
         .route("/scripts.js", get(scripts))
         .layer(Extension(args))
         .layer(DefaultBodyLimit::disable())
-        .layer(RequestBodyLimitLayer::new(250 * 1024 * 1024)) // 250MB limit
+        .layer(RequestBodyLimitLayer::new(REQUEST_BODY_LIMIT))
         .layer(tower_http::trace::TraceLayer::new_for_http())
 }
 
@@ -252,7 +255,7 @@ mod test {
                         CONTENT_TYPE,
                         "multipart/form-data;boundary=95685543938383789682253523760123",
                     )
-                    .header(CONTENT_LENGTH, "1000000000")
+                    .header(CONTENT_LENGTH, REQUEST_BODY_LIMIT + 1)
                     .body(Body::empty())
                     .unwrap(),
             )
