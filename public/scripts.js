@@ -31,12 +31,9 @@ addEventListener("DOMContentLoaded", (event) => {
         elements.uploadProgress.value = 0;
     }
 
-    const uploadProgress = (progress) => {
+    const uploadProgress = (progress, max) => {
+        elements.uploadProgress.max = max;
         elements.uploadProgress.value = progress;
-    }
-
-    const uploadDone = () => {
-        elements.uploadProgressWrapper.style.display = 'none';
     }
 
     const uploadFailed = (event) => {
@@ -78,10 +75,7 @@ addEventListener("DOMContentLoaded", (event) => {
             uploadStart(event.total);
         }, false);
         xhr.upload.addEventListener('progress', (event) => {
-            uploadProgress(event.loaded);
-        }, false);
-        xhr.upload.addEventListener('load', (event) => {
-            uploadProgress(event.total);
+            uploadProgress(event.loaded, event.total);
         }, false);
 
         xhr.addEventListener('readystatechange', (event) => {
