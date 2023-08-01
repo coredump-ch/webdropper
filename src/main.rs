@@ -148,9 +148,11 @@ async fn accept_form(
 mod test {
     use super::*;
 
-    use axum::body::Body;
-    use axum::http::header::CONTENT_TYPE;
-    use axum::http::{Request, StatusCode};
+    use axum::{
+        body::Body,
+        http::header::CONTENT_TYPE,
+        http::{Request, StatusCode},
+    };
     use tempfile::tempdir;
     use tower::ServiceExt;
 
