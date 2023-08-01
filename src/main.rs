@@ -48,12 +48,7 @@ async fn main() {
     let args = Arc::new(args);
 
     // Build our application with some routes
-    let app = Router::new()
-        .route("/", get(index).post(accept_form))
-        .route("/scripts.js", get(scripts))
-        .layer(Extension(args.clone()))
-        .layer(DefaultBodyLimit::max(250 * 1024 * 1024)) // 250MB limit
-        .layer(tower_http::trace::TraceLayer::new_for_http());
+    let app = app(args.clone());
 
     // run it with hyper
     tracing::info!("Listening on {}", &args.bind);
@@ -61,6 +56,15 @@ async fn main() {
         .serve(app.into_make_service())
         .await
         .unwrap();
+}
+
+fn app(args: Arc<Args>) -> Router {
+    Router::new()
+        .route("/", get(index).post(accept_form))
+        .route("/scripts.js", get(scripts))
+        .layer(Extension(args))
+        .layer(DefaultBodyLimit::max(250 * 1024 * 1024)) // 250MB limit
+        .layer(tower_http::trace::TraceLayer::new_for_http())
 }
 
 type IndexReturnType = Html<Cow<'static, [u8]>>;
@@ -138,4 +142,99 @@ async fn accept_form(
 
     // Show index page
     show_index(Some(&msg))
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    use axum::{
+        body::Body,
+        http::header::CONTENT_TYPE,
+        http::{Request, StatusCode},
+    };
+    use tempfile::tempdir;
+    use tower::ServiceExt;
+
+    fn default_args() -> Arc<Args> {
+        Arc::new(Args {
+            target_dir: "/tmp".into(),
+            bind: "127.0.0.1:3000".parse().unwrap(),
+        })
+    }
+
+    #[tokio::test]
+    async fn test_index() {
+        let app = app(default_args());
+
+        let response = app
+            .oneshot(Request::builder().uri("/").body(Body::empty()).unwrap())
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::OK);
+        assert_eq!(
+            response.headers().get(CONTENT_TYPE).unwrap(),
+            "text/html; charset=utf-8"
+        );
+    }
+
+    #[tokio::test]
+    async fn test_scripts_js() {
+        let app = app(default_args());
+
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/scripts.js")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::OK);
+        assert_eq!(
+            response.headers().get(CONTENT_TYPE).unwrap(),
+            "application/javascript"
+        );
+    }
+
+    #[tokio::test]
+    async fn test_upload() {
+        let tmp_dir = tempdir().unwrap();
+        let args = Arc::new(Args {
+            target_dir: tmp_dir.path().to_path_buf(),
+            bind: "127.0.0.1:3000".parse().unwrap(),
+        });
+        let app = app(args);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .method(axum::http::Method::POST)
+                    .uri("/")
+                    .header(CONTENT_TYPE, "multipart/form-data;boundary=95685543938383789682253523760123")
+                    .body(Body::from(
+                            "--95685543938383789682253523760123\r\n\
+                            Content-Disposition: form-data; name=\"file\"; filename=\"test.txt\"\r\n\
+                            Content-Type: text/plain\r\n\
+                            \r\n\
+                            hello\
+                            \r\n\
+                            --95685543938383789682253523760123--"
+                    ))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        assert_eq!(
+            response.headers().get(CONTENT_TYPE).unwrap(),
+            "text/html; charset=utf-8"
+        );
+        assert_eq!(
+            std::fs::read_to_string(tmp_dir.path().join("test.txt")).unwrap(),
+            "hello"
+        );
+    }
 }
