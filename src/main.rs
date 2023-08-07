@@ -10,6 +10,7 @@ use axum::{
 };
 use clap::Parser;
 use rust_embed::RustEmbed;
+use tower_http::limit::RequestBodyLimitLayer;
 use tracing::{error, info};
 
 #[derive(Parser)]
@@ -58,12 +59,16 @@ async fn main() {
         .unwrap();
 }
 
+/// 250MB limit
+const REQUEST_BODY_LIMIT: usize = 250 * 1024 * 1024;
+
 fn app(args: Arc<Args>) -> Router {
     Router::new()
         .route("/", get(index).post(accept_form))
         .route("/scripts.js", get(scripts))
         .layer(Extension(args))
-        .layer(DefaultBodyLimit::max(250 * 1024 * 1024)) // 250MB limit
+        .layer(DefaultBodyLimit::disable())
+        .layer(RequestBodyLimitLayer::new(REQUEST_BODY_LIMIT))
         .layer(tower_http::trace::TraceLayer::new_for_http())
 }
 
@@ -150,7 +155,7 @@ mod test {
 
     use axum::{
         body::Body,
-        http::header::CONTENT_TYPE,
+        http::header::{CONTENT_LENGTH, CONTENT_TYPE},
         http::{Request, StatusCode},
     };
     use tempfile::tempdir;
@@ -236,5 +241,26 @@ mod test {
             std::fs::read_to_string(tmp_dir.path().join("test.txt")).unwrap(),
             "hello"
         );
+    }
+
+    #[tokio::test]
+    async fn test_upload_with_too_large_content_length() {
+        let app = app(default_args());
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .method(axum::http::Method::POST)
+                    .uri("/")
+                    .header(
+                        CONTENT_TYPE,
+                        "multipart/form-data;boundary=95685543938383789682253523760123",
+                    )
+                    .header(CONTENT_LENGTH, REQUEST_BODY_LIMIT + 1)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::PAYLOAD_TOO_LARGE);
     }
 }
