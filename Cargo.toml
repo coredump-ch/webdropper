@@ -3,6 +3,12 @@ name = "webdropper"
 version = "1.2.0"
 edition = "2021"
 license = "MIT OR Apache-2.0"
+description = "Simple webservice to allow uploading files to a directory"
+repository = "https://github.com/coredump-ch/webdropper"
+authors = [
+    "Raphael Nestler <raphael.nestler@gmail.com>",
+    "Danilo Bargen <mail@dbrgn.ch>",
+]
 
 [dependencies]
 axum = { version = "0.6", features = ["multipart"] }
