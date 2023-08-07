@@ -22,6 +22,9 @@ struct Args {
     /// Address to bind to
     #[clap(short, long, default_value = "127.0.0.1:3000")]
     bind: SocketAddr,
+
+    #[clap(short, long, default_value_t = DEFAULT_REQUEST_BODY_LIMIT)]
+    request_body_limit: usize,
 }
 
 #[derive(RustEmbed)]
@@ -60,15 +63,15 @@ async fn main() {
 }
 
 /// 250MB limit
-const REQUEST_BODY_LIMIT: usize = 250 * 1024 * 1024;
+const DEFAULT_REQUEST_BODY_LIMIT: usize = 250 * 1024 * 1024;
 
 fn app(args: Arc<Args>) -> Router {
     Router::new()
         .route("/", get(index).post(accept_form))
         .route("/scripts.js", get(scripts))
-        .layer(Extension(args))
+        .layer(Extension(args.clone()))
         .layer(DefaultBodyLimit::disable())
-        .layer(RequestBodyLimitLayer::new(REQUEST_BODY_LIMIT))
+        .layer(RequestBodyLimitLayer::new(args.request_body_limit))
         .layer(tower_http::trace::TraceLayer::new_for_http())
 }
 
@@ -161,10 +164,13 @@ mod test {
     use tempfile::tempdir;
     use tower::ServiceExt;
 
+    const REQUEST_BODY_LIMIT: usize = 128;
+
     fn default_args() -> Arc<Args> {
         Arc::new(Args {
             target_dir: "/tmp".into(),
             bind: "127.0.0.1:3000".parse().unwrap(),
+            request_body_limit: REQUEST_BODY_LIMIT,
         })
     }
 
@@ -211,6 +217,7 @@ mod test {
         let args = Arc::new(Args {
             target_dir: tmp_dir.path().to_path_buf(),
             bind: "127.0.0.1:3000".parse().unwrap(),
+            request_body_limit: DEFAULT_REQUEST_BODY_LIMIT,
         });
         let app = app(args);
         let response = app
