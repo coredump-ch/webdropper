@@ -15,7 +15,7 @@ keywords = ["webserver", "http", "upload"]
 [dependencies]
 axum = { version = "0.6", features = ["multipart"] }
 clap = { version = "4", features = ["derive"] }
-rust-embed = "6"
+rust-embed = "8"
 html-escape = "0.2"
 tokio = { version = "1.0", features = ["full"] }
 tracing = "0.1"
