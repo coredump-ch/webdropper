@@ -1,7 +1,8 @@
 use std::{borrow::Cow, net::SocketAddr, path::PathBuf, process, sync::Arc};
+use tokio::net::TcpListener;
 
 use axum::{
-    body::{boxed, Bytes, Full},
+    body::{Body, Bytes},
     extract::{DefaultBodyLimit, Extension, Multipart},
     http::{header, Response},
     response::{Html, IntoResponse},
@@ -56,10 +57,8 @@ async fn main() {
 
     // run it with hyper
     tracing::info!("Listening on {}", &args.bind);
-    axum::Server::bind(&args.bind)
-        .serve(app.into_make_service())
-        .await
-        .unwrap();
+    let listener = TcpListener::bind(&args.bind).await.unwrap();
+    axum::serve(listener, app).await.unwrap();
 }
 
 /// 250MB limit
@@ -107,7 +106,8 @@ async fn index() -> IndexReturnType {
 
 async fn scripts() -> impl IntoResponse {
     let data = EmbeddableStaticFile::get("scripts.js").unwrap().data;
-    let body = boxed(Full::from(data));
+    let str_data = std::str::from_utf8(&data).expect("Non-UTF8 scripts.js");
+    let body = Body::new(str_data.to_string());
     Response::builder()
         .header(header::CONTENT_TYPE, "application/javascript")
         .body(body)

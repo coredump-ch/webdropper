@@ -13,15 +13,15 @@ categories = ["web-programming::http-server"]
 keywords = ["webserver", "http", "upload"]
 
 [dependencies]
-axum = { version = "0.6", features = ["multipart"] }
+axum = { version = "0.7", features = ["multipart"] }
 clap = { version = "4", features = ["derive"] }
 rust-embed = "8"
 html-escape = "0.2"
 tokio = { version = "1.0", features = ["full"] }
 tracing = "0.1"
 tracing-subscriber = { version="0.3", features = ["env-filter"] }
-tower = { version = "0.4.0" }
-tower-http = { version = "0.4.0", features = ["trace", "limit"] }
+tower = { version = "0.5.0" }
+tower-http = { version = "0.6.0", features = ["trace", "limit"] }
 
 [dev-dependencies]
 tempfile = "3.7.0"
